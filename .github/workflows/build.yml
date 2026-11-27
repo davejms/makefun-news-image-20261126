@@ -30,6 +30,11 @@ jobs:
           assert size <= 1_000_000, f"too big: {size} bytes"
           print(f"OK: {path} is {w}x{h}, {size} bytes")
           PY
+      - name: Check determinism (run twice, same bytes)
+        run: |
+          sha256sum .makefun/output/output.png > /tmp/first.sha
+          python3 main.py
+          sha256sum -c /tmp/first.sha
       - name: Upload the image
         uses: actions/upload-artifact@v4
         with:
