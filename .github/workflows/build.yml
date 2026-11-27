@@ -1,0 +1,37 @@
+name: Build entry image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Run the program
+        run: python3 main.py
+      - name: Check the output image
+        run: |
+          python3 - <<'PY'
+          import os, struct
+          path = ".makefun/output/output.png"
+          size = os.path.getsize(path)
+          with open(path, "rb") as f:
+              data = f.read(33)
+          assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG"
+          w, h = struct.unpack(">II", data[16:24])
+          assert (w, h) == (1024, 1024), f"wrong size: {w}x{h}"
+          assert size <= 1_000_000, f"too big: {size} bytes"
+          print(f"OK: {path} is {w}x{h}, {size} bytes")
+          PY
+      - name: Upload the image
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-image
+          path: .makefun/output/output.png
